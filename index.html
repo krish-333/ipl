@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IPL AI Predictor</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg, #0b1d3a, #1e3c72);
+      color: white;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    select, input, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 200px;
+    }
+
+    button {
+      background: orange;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .card {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🏏 IPL Score Predictor + Fantasy AI</h1>
+
+<div class="card">
+  <h2>📊 Match Prediction</h2>
+
+  <select id="team">
+    <option>MI</option>
+    <option>CSK</option>
+    <option>RCB</option>
+    <option>KKR</option>
+  </select><br>
+
+  <input type="number" id="runs" placeholder="Runs last 5 overs"><br>
+  <input type="number" id="wickets" placeholder="Wickets last 5 overs"><br>
+
+  <button onclick="predict()">Predict Score</button>
+
+  <h2 id="result"></h2>
+</div>
+
+<div class="card">
+  <h2>⭐ Fantasy Team Suggestion</h2>
+  <button onclick="suggest()">Get Best Players</button>
+  <div id="players"></div>
+</div>
+
+<script>
+
+function predict() {
+  const team = document.getElementById("team").value;
+  const runs = parseInt(document.getElementById("runs").value) || 50;
+  const wickets = parseInt(document.getElementById("wickets").value) || 2;
+
+  let base = 150;
+
+  // Team strength (simulated ML weights)
+  let teamBoost = {
+    "MI": 10,
+    "CSK": 8,
+    "RCB": 15,
+    "KKR": 12
+  };
+
+  let score = base + teamBoost[team] + (runs * 1.5) - (wickets * 8);
+
+  document.getElementById("result").innerText =
+    "Predicted Score: " + Math.round(score);
+}
+
+
+function suggest() {
+
+  let players = [
+    {name:"Virat Kohli", role:"Batsman", form:95},
+    {name:"Rohit Sharma", role:"Batsman", form:85},
+    {name:"MS Dhoni", role:"WK", form:80},
+    {name:"Hardik Pandya", role:"All-rounder", form:90},
+    {name:"Andre Russell", role:"All-rounder", form:92},
+    {name:"Jasprit Bumrah", role:"Bowler", form:88},
+    {name:"Mohammed Siraj", role:"Bowler", form:84}
+  ];
+
+  // Sort by form (AI logic)
+  players.sort((a,b) => b.form - a.form);
+
+  let top = players.slice(0,5);
+
+  let output = "<h3>🏆 Recommended Players:</h3>";
+
+  top.forEach(p => {
+    output += `<p>${p.name} (${p.role}) - Form: ${p.form}</p>`;
+  });
+
+  document.getElementById("players").innerHTML = output;
+}
+
+</script>
+
+</body>
+</html>
