@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>IPL AI Predictor</title>
+  <title>IPL AI Predictor (Deep Learning)</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 
   <style>
     body {
@@ -9,25 +11,21 @@
       background: linear-gradient(135deg, #0b1d3a, #1e3c72);
       color: white;
       text-align: center;
-      padding: 40px;
-    }
-
-    h1 {
-      margin-bottom: 20px;
+      padding: 30px;
     }
 
     select, input, button {
       padding: 10px;
-      margin: 10px;
+      margin: 8px;
       border-radius: 8px;
       border: none;
-      width: 200px;
+      width: 220px;
     }
 
     button {
       background: orange;
-      cursor: pointer;
       font-weight: bold;
+      cursor: pointer;
     }
 
     .card {
@@ -42,77 +40,148 @@
 
 <body>
 
-<h1>🏏 IPL Score Predictor + Fantasy AI</h1>
+<h1>🏏 IPL Deep Learning Predictor</h1>
 
 <div class="card">
-  <h2>📊 Match Prediction</h2>
+<h2>📊 Score Prediction</h2>
 
-  <select id="team">
-    <option>MI</option>
-    <option>CSK</option>
-    <option>RCB</option>
-    <option>KKR</option>
-  </select><br>
+<select id="team">
+<option>MI</option>
+<option>CSK</option>
+<option>RCB</option>
+<option>KKR</option>
+<option>SRH</option>
+<option>DC</option>
+<option>RR</option>
+<option>PBKS</option>
+<option>GT</option>
+<option>LSG</option>
+</select>
 
-  <input type="number" id="runs" placeholder="Runs last 5 overs"><br>
-  <input type="number" id="wickets" placeholder="Wickets last 5 overs"><br>
+<select id="opponent">
+<option>MI</option>
+<option>CSK</option>
+<option>RCB</option>
+<option>KKR</option>
+<option>SRH</option>
+<option>DC</option>
+<option>RR</option>
+<option>PBKS</option>
+<option>GT</option>
+<option>LSG</option>
+</select>
 
-  <button onclick="predict()">Predict Score</button>
+<br>
 
-  <h2 id="result"></h2>
+<input type="number" id="powerplay" placeholder="Powerplay runs">
+<input type="number" id="runs" placeholder="Runs last 5 overs">
+<input type="number" id="wickets" placeholder="Wickets last 5 overs">
+
+<br>
+
+<button onclick="predict()">Predict Score</button>
+
+<h2 id="result">Training model...</h2>
 </div>
 
 <div class="card">
-  <h2>⭐ Fantasy Team Suggestion</h2>
-  <button onclick="suggest()">Get Best Players</button>
-  <div id="players"></div>
+<h2>⭐ Fantasy Suggestion</h2>
+<button onclick="suggest()">Generate Team</button>
+<div id="players"></div>
 </div>
 
 <script>
 
-function predict() {
-  const team = document.getElementById("team").value;
+// Encode teams
+const teams = ["MI","CSK","RCB","KKR","SRH","DC","RR","PBKS","GT","LSG"];
+
+function encodeTeam(team) {
+  return teams.indexOf(team);
+}
+
+// Create Deep Learning Model
+const model = tf.sequential();
+model.add(tf.layers.dense({units: 16, activation: 'relu', inputShape: [5]}));
+model.add(tf.layers.dense({units: 8, activation: 'relu'}));
+model.add(tf.layers.dense({units: 1}));
+
+model.compile({
+  optimizer: 'adam',
+  loss: 'meanSquaredError'
+});
+
+// Dummy training data
+const xs = tf.tensor2d([
+  [0,1,50,45,2],
+  [1,0,45,50,3],
+  [2,3,60,60,2],
+  [3,2,48,48,4],
+  [4,5,55,55,1],
+  [5,4,52,52,2],
+  [6,7,65,65,2],
+  [7,6,49,49,3]
+]);
+
+const ys = tf.tensor2d([
+  [180],[175],[190],[165],[185],[178],[200],[170]
+]);
+
+async function trainModel() {
+  await model.fit(xs, ys, {
+    epochs: 100,
+    callbacks: {
+      onEpochEnd: (epoch, logs) => {
+        document.getElementById("result").innerText =
+          "Training... Epoch " + epoch;
+      }
+    }
+  });
+
+  document.getElementById("result").innerText =
+    "Model Ready ✅";
+}
+
+trainModel();
+
+async function predict() {
+
+  const team = encodeTeam(document.getElementById("team").value);
+  const opponent = encodeTeam(document.getElementById("opponent").value);
+  const powerplay = parseInt(document.getElementById("powerplay").value) || 50;
   const runs = parseInt(document.getElementById("runs").value) || 50;
   const wickets = parseInt(document.getElementById("wickets").value) || 2;
 
-  let base = 150;
+  const input = tf.tensor2d([[team, opponent, powerplay, runs, wickets]]);
+  const prediction = model.predict(input);
 
-  // Team strength (simulated ML weights)
-  let teamBoost = {
-    "MI": 10,
-    "CSK": 8,
-    "RCB": 15,
-    "KKR": 12
-  };
-
-  let score = base + teamBoost[team] + (runs * 1.5) - (wickets * 8);
+  const score = (await prediction.data())[0];
 
   document.getElementById("result").innerText =
     "Predicted Score: " + Math.round(score);
 }
 
 
+// Fantasy logic
 function suggest() {
 
   let players = [
-    {name:"Virat Kohli", role:"Batsman", form:95},
-    {name:"Rohit Sharma", role:"Batsman", form:85},
-    {name:"MS Dhoni", role:"WK", form:80},
-    {name:"Hardik Pandya", role:"All-rounder", form:90},
-    {name:"Andre Russell", role:"All-rounder", form:92},
-    {name:"Jasprit Bumrah", role:"Bowler", form:88},
-    {name:"Mohammed Siraj", role:"Bowler", form:84}
+    {name:"Virat Kohli", form:95},
+    {name:"Rohit Sharma", form:85},
+    {name:"Gill", form:92},
+    {name:"Buttler", form:90},
+    {name:"Hardik", form:91},
+    {name:"Russell", form:93},
+    {name:"Bumrah", form:94}
   ];
 
-  // Sort by form (AI logic)
   players.sort((a,b) => b.form - a.form);
 
   let top = players.slice(0,5);
 
-  let output = "<h3>🏆 Recommended Players:</h3>";
+  let output = "<h3>Top Picks:</h3>";
 
   top.forEach(p => {
-    output += `<p>${p.name} (${p.role}) - Form: ${p.form}</p>`;
+    output += `<p>${p.name} - ${p.form}</p>`;
   });
 
   document.getElementById("players").innerHTML = output;
